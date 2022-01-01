@@ -2,9 +2,7 @@ package com.example.licnesingservice.controller;
 
 import com.example.licnesingservice.model.License;
 import com.example.licnesingservice.service.LicenseService;
-import org.apache.tomcat.jni.Local;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.hateoas.Link;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,10 +30,10 @@ public class LicenseController {
                         .getLicense(organizationId, license.getLicenseId()))
                         .withSelfRel(),
                 linkTo(methodOn(LicenseController.class)
-                        .createLicense(organizationId, license, null))
+                        .createLicense( license, null))
                         .withRel("createLicense"),
                 linkTo(methodOn(LicenseController.class)
-                        .updateLicense(organizationId, license))
+                        .updateLicense(license))
                         .withRel("updateLicense"),
                 linkTo(methodOn(LicenseController.class)
                         .deleteLicense(organizationId, license.getLicenseId()))
@@ -44,29 +42,25 @@ public class LicenseController {
     }
 
     @PutMapping
-    public ResponseEntity<String> updateLicense(
-            @PathVariable("organizationId")
-                    String organizationId,
+    public ResponseEntity<License> updateLicense(
             @RequestBody License request) {
-        return ResponseEntity.ok(licenseService.updateLicense(request,
-                organizationId));
+        return ResponseEntity.ok(licenseService.updateLicense(request));
     }
 
     @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity<String> createLicense(@PathVariable("organizationId") String organizationId,
+    public ResponseEntity<License> createLicense(
                                                 @RequestBody License request,
                                                 @RequestHeader(value = "Accept-Language", required = false)
                                                         Locale locale) {
-        return ResponseEntity.ok(licenseService.createLicense(request,
-                organizationId, locale));
+        return ResponseEntity.ok(licenseService.createLicense(request
+              ));
     }
 
     @DeleteMapping(value = "/{}")
     public ResponseEntity<String> deleteLicense(@PathVariable("organizationId") String organizationId,
                                                 @PathVariable("licenseId") String licenseId) {
 
-        return ResponseEntity.ok(licenseService.deleteLicense(licenseId,
-                organizationId));
+        return ResponseEntity.ok(licenseService.deleteLicense(licenseId));
     }
 
 

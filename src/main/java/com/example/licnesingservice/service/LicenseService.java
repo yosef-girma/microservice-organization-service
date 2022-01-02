@@ -7,14 +7,14 @@ import com.example.licnesingservice.model.Organization;
 import com.example.licnesingservice.repository.LicenseRepository;
 import com.example.licnesingservice.service.client.OrganizationDiscoveryClient;
 import com.example.licnesingservice.service.client.OrganizationRestTemplateClient;
+import com.example.licnesingservice.utils.LicenseUtils;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 
 
-import java.util.Locale;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class LicenseService {
@@ -36,13 +36,13 @@ public class LicenseService {
     OrganizationRestTemplateClient organizationRestTemplateClient;
 
 
-    public License getLicense(String licenseId,String organizationId,String clientType){
-        License license = licenseRepository.findByOrganizationIdAndLicenseId(organizationId,licenseId);
-        if(null == license){
-            throw new IllegalArgumentException(String.format(messages.getMessage("license.search.error.message",null,null),licenseId,organizationId));
+    public License getLicense(String licenseId, String organizationId, String clientType) {
+        License license = licenseRepository.findByOrganizationIdAndLicenseId(organizationId, licenseId);
+        if (null == license) {
+            throw new IllegalArgumentException(String.format(messages.getMessage("license.search.error.message", null, null), licenseId, organizationId));
         }
-        Organization organization = retrieveOrganizationInfo(organizationId,clientType);
-        if(null != organization){
+        Organization organization = retrieveOrganizationInfo(organizationId, clientType);
+        if (null != organization) {
             license.setOrganizationName(organization.getName());
             license.setContactName(organization.getContactName());
             license.setContactEmail(organization.getContactEmail());
@@ -104,4 +104,23 @@ public class LicenseService {
         responseMessage = String.format("Deleting license with id %s", licenseId);
         return responseMessage;
     }
+
+    @CircuitBreaker(name = "licenseService",fallbackMethod = "buildFallbackLicenseList")
+    public List<License> getLicensesByOrganization(String organizationId) {
+        LicenseUtils.randomlyRunLong();
+        return licenseRepository.findByOrganizationId(organizationId);
+    }
+
+    @SuppressWarnings("unused")
+    private List<License> buildFallbackLicenseList(String organizationId, Throwable t){
+        List<License> fallbackList = new ArrayList<>();
+        License license = new License();
+        license.setLicenseId("0000000-00-00000");
+        license.setOrganizationId(organizationId);
+        license.setProductName("Sorry no licensing information currently available");
+        fallbackList.add(license);
+        return fallbackList;
+    }
+
+
 }

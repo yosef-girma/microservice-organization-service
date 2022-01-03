@@ -8,7 +8,10 @@ import com.example.licnesingservice.repository.LicenseRepository;
 import com.example.licnesingservice.service.client.OrganizationDiscoveryClient;
 import com.example.licnesingservice.service.client.OrganizationRestTemplateClient;
 import com.example.licnesingservice.utils.LicenseUtils;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
@@ -105,12 +108,18 @@ public class LicenseService {
         return responseMessage;
     }
 
+    // default bulkhead is seamphore type
     @CircuitBreaker(name = "licenseService",fallbackMethod = "buildFallbackLicenseList")
+    @RateLimiter(name = "licenseService",fallbackMethod = "buildFallbackLicenseList")
+    @Retry(name = "retryLicenseService",fallbackMethod = "buildFallbackLicenseList")
+    @Bulkhead(name = "bulkheadLicenseService",type = Bulkhead.Type.THREADPOOL, fallbackMethod = "buildFallbackLicenseList")
     public List<License> getLicensesByOrganization(String organizationId) {
+
         LicenseUtils.randomlyRunLong();
         return licenseRepository.findByOrganizationId(organizationId);
     }
-
+   // This method must
+   // must reside in the same class as the original method that was protected by @Circuit Breaker
     @SuppressWarnings("unused")
     private List<License> buildFallbackLicenseList(String organizationId, Throwable t){
         List<License> fallbackList = new ArrayList<>();

@@ -1,0 +1,136 @@
+spring:
+  application:
+    name: licensing-service
+  profiles:
+    active: dev
+  cloud:
+    config:
+      uri: http://localhost:8181
+resilience4j:
+  thread-pool-bulkhead:
+    instances:
+      bulkheadLicenseService:
+        maxThreadPoolSize: 1  # default value is Runtime.getRuntime().availableProcessors()
+        coreThreadPoolSize: 1
+        queueCapacity: 1 # default 100
+        keepAliveDuration: 20ms # The maximum time that idle threads wait for new tasks before terminating default 20ms
+        # A key indicator that the thread pool properties need to be adjusted is
+        # when a service call is in the process of timing out, even if the targeted remote resource is healthy.
+  bulkhead:
+    instances:
+      bulkheadLicenseService:
+        maxWaitDuration: 10ms  # max amount of time to block a thread default zero
+        maxConcurrentCalls: 20 # max concurrent calls default 25
+
+  circuitbreaker:
+    instances:
+      licenseService:
+        registerHealthIndicator: true
+        ringBufferSizeInClosedState: 5
+        ringBufferSizeInHalfOpenState: 3
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+        recordExceptions:
+          - org.springframework.web.client.HttpServerErrorException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.client.ResourceAccessException
+
+      organizationService:
+        registerHealthIndicator: true
+        ringBufferSizeInClosedState: 6
+        ringBufferSizeInHalfOpenState: 4
+        waitDurationInOpenState: 20s
+        failureRateThreshold: 60
+  retry:
+    instances:
+      retryLicenseService:
+        maxRetryAttempts: 5 # default thre
+        waitDuration: 10000 # default 500ms
+        retry-exceptions:
+         - java.util.concurrent.TimeoutException
+  ratelimiter:
+    instances:
+      licenseService:
+        timeoutDuration: 1000ms # How long a thread can wait to acquire permission is specified by  if no Requesnotpermitted will be thorw
+        limitRefreshPeriod: 5000  # How often the RateLimiter refreshes the permissions is specified b
+        limitForPeriod: 5  # The number of calls that are permitted during a period
+
+
+
+
+# latest for more https://resilience4j.readme.io/docs/circuitbreaker#count-based-sliding-window
+
+#resilience4j.circuitbreaker:
+#  instances:
+#    backendA:
+#      registerHealthIndicator: true
+#      slidingWindowSize: 100
+#    backendB:
+#      registerHealthIndicator: true
+#      slidingWindowSize: 10
+#      permittedNumberOfCallsInHalfOpenState: 3
+#      slidingWindowType: TIME_BASED
+#      minimumNumberOfCalls: 20
+#      waitDurationInOpenState: 50s
+#      failureRateThreshold: 50
+#      eventConsumerBufferSize: 10
+#      recordFailurePredicate: io.github.robwin.exception.RecordFailurePredicate
+#
+#resilience4j.retry:
+#  instances:
+#    backendA:
+#      maxAttempts: 3
+#      waitDuration: 10s
+#      enableExponentialBackoff: true
+#      exponentialBackoffMultiplier: 2
+#      retryExceptions:
+#        - org.springframework.web.client.HttpServerErrorException
+#        - java.io.IOException
+#      ignoreExceptions:
+#        - io.github.robwin.exception.BusinessException
+#    backendB:
+#      maxAttempts: 3
+#      waitDuration: 10s
+#      retryExceptions:
+#        - org.springframework.web.client.HttpServerErrorException
+#        - java.io.IOException
+#      ignoreExceptions:
+#        - io.github.robwin.exception.BusinessException
+#
+#resilience4j.bulkhead:
+#  instances:
+#    backendA:
+#      maxConcurrentCalls: 10
+#    backendB:
+#      maxWaitDuration: 10ms
+#      maxConcurrentCalls: 20
+#
+#resilience4j.thread-pool-bulkhead:
+#  instances:
+#    backendC:
+#      maxThreadPoolSize: 1
+#      coreThreadPoolSize: 1
+#      queueCapacity: 1
+#
+#resilience4j.ratelimiter:
+#  instances:
+#    backendA:
+#      limitForPeriod: 10
+#      limitRefreshPeriod: 1s
+#      timeoutDuration: 0
+#      registerHealthIndicator: true
+#      eventConsumerBufferSize: 100
+#    backendB:
+#      limitForPeriod: 6
+#      limitRefreshPeriod: 500ms
+#      timeoutDuration: 3s
+#
+#resilience4j.timelimiter:
+#  instances:
+#    backendA:
+#      timeoutDuration: 2s
+#      cancelRunningFuture: true
+#    backendB:
+#      timeoutDuration: 1s
+#      cancelRunningFuture: false

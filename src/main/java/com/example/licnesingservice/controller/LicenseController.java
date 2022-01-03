@@ -2,6 +2,9 @@ package com.example.licnesingservice.controller;
 
 import com.example.licnesingservice.model.License;
 import com.example.licnesingservice.service.LicenseService;
+import com.example.licnesingservice.utils.UserContextHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +21,8 @@ public class LicenseController {
 
     @Autowired
     private LicenseService licenseService;
+
+    private static final Logger logger = LoggerFactory.getLogger(LicenseController.class);
 
     @GetMapping(value = "/{licenseId}")
     public ResponseEntity<License> getLicense(
@@ -45,6 +50,7 @@ public class LicenseController {
 
     @RequestMapping(value="/",method = RequestMethod.GET)
     public List<License> getLicenses(@PathVariable("organizationId") String organizationId) {
+        logger.debug("LicenseServiceController Correlation id: {}", UserContextHolder.getContext().getCorrelationId());
         return licenseService.getLicensesByOrganization(organizationId);
     }
 

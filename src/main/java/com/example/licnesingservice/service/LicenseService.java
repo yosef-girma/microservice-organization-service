@@ -8,10 +8,13 @@ import com.example.licnesingservice.repository.LicenseRepository;
 import com.example.licnesingservice.service.client.OrganizationDiscoveryClient;
 import com.example.licnesingservice.service.client.OrganizationRestTemplateClient;
 import com.example.licnesingservice.utils.LicenseUtils;
+import com.example.licnesingservice.utils.UserContextHolder;
 import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
@@ -38,6 +41,7 @@ public class LicenseService {
     @Autowired
     OrganizationRestTemplateClient organizationRestTemplateClient;
 
+    private static final Logger logger = LoggerFactory.getLogger(LicenseService.class);
 
     public License getLicense(String licenseId, String organizationId, String clientType) {
         License license = licenseRepository.findByOrganizationIdAndLicenseId(organizationId, licenseId);
@@ -115,6 +119,8 @@ public class LicenseService {
     @Bulkhead(name = "bulkheadLicenseService",type = Bulkhead.Type.THREADPOOL, fallbackMethod = "buildFallbackLicenseList")
     public List<License> getLicensesByOrganization(String organizationId) {
 
+        logger.debug("LicenseServiceController Correlation id: {}",
+                UserContextHolder.getContext().getCorrelationId());
         LicenseUtils.randomlyRunLong();
         return licenseRepository.findByOrganizationId(organizationId);
     }

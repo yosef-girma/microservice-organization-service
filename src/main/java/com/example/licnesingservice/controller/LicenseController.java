@@ -16,7 +16,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.reactive.WebFluxLinkBuilder.methodOn;
 
 @RestController
-@RequestMapping(value = "v1/organization/{organizationId}/license")
+@RequestMapping(value = "/v1/organization/{organizationId}/license")
 public class LicenseController {
 
     @Autowired
